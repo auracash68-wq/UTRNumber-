@@ -200,5 +200,11 @@ tasks.register<Copy>("copyReleaseApk") {
   dependsOn("assembleRelease")
   from(layout.buildDirectory.file("outputs/apk/release/app-release.apk"))
   into(file("${rootDir}/.build-outputs"))
+  doLast {
+    copy {
+      from(layout.buildDirectory.file("outputs/apk/release/app-release.apk"))
+      into(file("${rootDir}/app"))
+    }
+  }
 }
 
