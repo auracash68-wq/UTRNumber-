@@ -1,3 +1,8 @@
+import java.awt.Graphics2D
+import java.awt.RenderingHints
+import java.awt.image.BufferedImage
+import javax.imageio.ImageIO
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.compose)
@@ -11,7 +16,7 @@ android {
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {
-    applicationId = "com.aistudio.calculator.fyrxwa"
+    applicationId = "com.nanocalculate.calculator"
     minSdk = 24
     targetSdk = 36
     versionCode = 1
@@ -20,13 +25,83 @@ android {
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
+  // Register a task to generate release keystore at execution time before packaging/building
+  val generateKeystoreTask = tasks.register("generateKeystore") {
+    val jksFile = file("nanocalculate.jks")
+    onlyIf { !jksFile.exists() }
+    doLast {
+      try {
+        ProcessBuilder(
+          "keytool", "-genkeypair", "-noprompt",
+          "-keystore", jksFile.absolutePath,
+          "-alias", "nanocalculate_alias",
+          "-keyalg", "RSA",
+          "-keysize", "2048",
+          "-validity", "10000",
+          "-storepass", "sahid123",
+          "-keypass", "sahid123",
+          "-dname", "CN=sahid, O=Aura green, L=Kolkata, S=West Bengal, C=IN"
+        ).inheritIO().start().waitFor()
+      } catch (e: Exception) {
+        logger.warn("Keystore creation failed: ", e)
+      }
+    }
+  }
+
+  // Register a task to generate legacy and adaptive mipmaps from our single icon (ic_launcher_fgs.png) at build-time
+  val generateMipmapsTask = tasks.register("generateMipmaps") {
+    val srcPath = project.projectDir.resolve("src/main/res/drawable/ic_launcher_fgs.png")
+    val resPath = project.projectDir.resolve("src/main/res")
+    onlyIf { srcPath.exists() }
+    doLast {
+      try {
+        val densities = mapOf(
+          "mdpi" to 48,
+          "hdpi" to 72,
+          "xhdpi" to 96,
+          "xxhdpi" to 144,
+          "xxxhdpi" to 192
+        )
+        val img = javax.imageio.ImageIO.read(srcPath)
+        if (img != null) {
+          densities.forEach { (dirName, size) ->
+            val dir = resPath.resolve("mipmap-$dirName")
+            if (!dir.exists()) {
+              dir.mkdirs()
+            }
+            val resized = BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB)
+            val g = resized.createGraphics()
+            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC)
+            g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+            g.drawImage(img, 0, 0, size, size, null)
+            g.dispose()
+
+            javax.imageio.ImageIO.write(resized, "png", dir.resolve("ic_launcher.png"))
+            javax.imageio.ImageIO.write(resized, "png", dir.resolve("ic_launcher_round.png"))
+          }
+          println("Successfully generated and saved all adaptive multi-density launcher icons.")
+        } else {
+          println("Source launcher image read returned null!")
+        }
+      } catch (e: Exception) {
+        println("Launcher icon multi-density copies generation failed: ${e.message}")
+      }
+    }
+  }
+
+  // Ensure all build tasks depend on our keystore generation and mipmap generation tasks (excluding themselves)
+  tasks.matching { (it.name.startsWith("preBuild") || it.name.startsWith("generate")) && it.name != "generateKeystore" && it.name != "generateMipmaps" }.all {
+    dependsOn(generateKeystoreTask)
+    dependsOn(generateMipmapsTask)
+  }
+
   signingConfigs {
     create("release") {
-      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
-      storeFile = file(keystorePath)
-      storePassword = System.getenv("STORE_PASSWORD")
-      keyAlias = "upload"
-      keyPassword = System.getenv("KEY_PASSWORD")
+      storeFile = file("nanocalculate.jks")
+      storePassword = "sahid123"
+      keyAlias = "nanocalculate_alias"
+      keyPassword = "sahid123"
     }
     create("debugConfig") {
       storeFile = file("${rootDir}/debug.keystore")
@@ -120,3 +195,10 @@ dependencies {
   "ksp"(libs.androidx.room.compiler)
   "ksp"(libs.moshi.kotlin.codegen)
 }
+
+tasks.register<Copy>("copyReleaseApk") {
+  dependsOn("assembleRelease")
+  from(layout.buildDirectory.file("outputs/apk/release/app-release.apk"))
+  into(file("${rootDir}/.build-outputs"))
+}
+

@@ -1,53 +1,54 @@
 package com.example.data
 
 import android.content.Context
+import android.content.SharedPreferences
 import com.example.ui.theme.AppTheme
 import com.example.ui.theme.BackgroundStyle
 
 class SettingsManager(context: Context) {
-    private val prefs = context.getSharedPreferences("calculator_settings", Context.MODE_PRIVATE)
-
-    companion object {
-        private const val KEY_THEME = "app_theme_ordinal"
-        private const val KEY_BACKGROUND = "bg_style_ordinal"
-        private const val KEY_SOUND_ENABLED = "sound_enabled"
-        private const val KEY_SOUND_VOLUME = "sound_volume"
-        private const val KEY_ANIMATION_ENABLED = "animations_enabled"
-    }
+    private val prefs: SharedPreferences = context.getSharedPreferences("aura_calculator_prefs", Context.MODE_PRIVATE)
 
     var theme: AppTheme
         get() {
-            val ordinal = prefs.getInt(KEY_THEME, AppTheme.SLEEK_INTERFACE.ordinal)
-            return AppTheme.values().getOrElse(ordinal) { AppTheme.SLEEK_INTERFACE }
+            val name = prefs.getString("key_theme", AppTheme.OCEAN.name) ?: AppTheme.OCEAN.name
+            return try {
+                AppTheme.valueOf(name)
+            } catch (e: Exception) {
+                AppTheme.OCEAN
+            }
         }
         set(value) {
-            prefs.edit().putInt(KEY_THEME, value.ordinal).apply()
+            prefs.edit().putString("key_theme", value.name).apply()
         }
 
     var background: BackgroundStyle
         get() {
-            val ordinal = prefs.getInt(KEY_BACKGROUND, BackgroundStyle.GRADIENT.ordinal)
-            return BackgroundStyle.values().getOrElse(ordinal) { BackgroundStyle.GRADIENT }
+            val name = prefs.getString("key_background", BackgroundStyle.GRADIENT.name) ?: BackgroundStyle.GRADIENT.name
+            return try {
+                BackgroundStyle.valueOf(name)
+            } catch (e: Exception) {
+                BackgroundStyle.GRADIENT
+            }
         }
         set(value) {
-            prefs.edit().putInt(KEY_BACKGROUND, value.ordinal).apply()
+            prefs.edit().putString("key_background", value.name).apply()
         }
 
     var isSoundEnabled: Boolean
-        get() = prefs.getBoolean(KEY_SOUND_ENABLED, true)
+        get() = prefs.getBoolean("key_sound_enabled", true)
         set(value) {
-            prefs.edit().putBoolean(KEY_SOUND_ENABLED, value).apply()
+            prefs.edit().putBoolean("key_sound_enabled", value).apply()
         }
 
     var soundVolume: Float
-        get() = prefs.getFloat(KEY_SOUND_VOLUME, 0.5f)
+        get() = prefs.getFloat("key_sound_volume", 0.5f)
         set(value) {
-            prefs.edit().putFloat(KEY_SOUND_VOLUME, value).apply()
+            prefs.edit().putFloat("key_sound_volume", value).apply()
         }
 
     var isAnimationEnabled: Boolean
-        get() = prefs.getBoolean(KEY_ANIMATION_ENABLED, true)
+        get() = prefs.getBoolean("key_animation_enabled", true)
         set(value) {
-            prefs.edit().putBoolean(KEY_ANIMATION_ENABLED, value).apply()
+            prefs.edit().putBoolean("key_animation_enabled", value).apply()
         }
 }

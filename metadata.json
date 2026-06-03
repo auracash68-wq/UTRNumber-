@@ -1,5 +1,5 @@
 {
-  "name": "Calculator",
+  "name": "nano calculate",
   "description": "A premium Material 3 scientific calculator with interactive custom themes, offline local history, click sounds, fluid animations, and professional data export.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

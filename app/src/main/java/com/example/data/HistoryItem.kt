@@ -5,10 +5,10 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "calculation_history")
 data class HistoryItem(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @PrimaryKey(autoGenerate = true) val id: Long = 0L,
     val expression: String,
     val result: String,
     val timestamp: Long = System.currentTimeMillis(),
-    val isFavorite: Boolean = false,
-    val isScientific: Boolean = false
+    val isScientific: Boolean,
+    val isFavorite: Boolean = false
 )

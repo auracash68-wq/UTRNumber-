@@ -11,6 +11,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -72,6 +73,20 @@ class MainActivity : ComponentActivity() {
             val colors = ThemeConfig.getColorsForTheme(currentTheme)
             
             var activeTab by remember { mutableStateOf(ActiveTab.CALCULATOR) }
+
+            var showSplash by remember { mutableStateOf(true) }
+            var splashProgress by remember { mutableStateOf(0f) }
+
+            LaunchedEffect(Unit) {
+                val duration = 1800L
+                val steps = 60
+                val delayTime = duration / steps
+                for (i in 1..steps) {
+                    kotlinx.coroutines.delay(delayTime)
+                    splashProgress = i.toFloat() / steps
+                }
+                showSplash = false
+            }
 
             // Sync ViewModel and Sound settings dynamically
             val isSoundEnabled by viewModel.isSoundEnabled.collectAsState()
@@ -192,6 +207,91 @@ class MainActivity : ComponentActivity() {
                                         soundManager = soundManager
                                     )
                                 }
+                            }
+                        }
+                    }
+                }
+
+                // --- C. PROFESSIONAL SPLASH SCREEN WITH SMOOTH PROGRESS ---
+                if (showSplash) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color(0xFF0F1016)), // Deep dark slate background 
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            // Rounded calculator block container
+                            Card(
+                                modifier = Modifier
+                                    .size(96.dp)
+                                    .padding(8.dp),
+                                shape = RoundedCornerShape(24.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161824)),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Calculate,
+                                        contentDescription = "nano calculate logo",
+                                        tint = Color(0xFFC084FC),
+                                        modifier = Modifier.size(56.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(20.dp))
+                            Text(
+                                text = "nano calculate",
+                                fontSize = 32.sp,
+                                fontWeight = FontWeight.Black,
+                                color = Color.White,
+                                letterSpacing = 1.5.sp
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "The Professional Matrix Solver",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color.White.copy(alpha = 0.5f),
+                                letterSpacing = 0.5.sp
+                            )
+                            Spacer(modifier = Modifier.height(48.dp))
+                            
+                            // Professional progress bar loader
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(180.dp)
+                                        .height(6.dp)
+                                        .border(0.5.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(3.dp))
+                                        .background(Color(0xFF14151D), RoundedCornerShape(3.dp))
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxHeight()
+                                            .fillMaxWidth(splashProgress)
+                                            .background(
+                                                androidx.compose.ui.graphics.Brush.horizontalGradient(
+                                                    colors = listOf(Color(0xFF8B5CF6), Color(0xFFC084FC))
+                                                ),
+                                                RoundedCornerShape(3.dp)
+                                            )
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = "Initializing System... ${(splashProgress * 100).toInt()}%",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFC084FC).copy(alpha = 0.85f),
+                                    letterSpacing = 1.sp
+                                )
                             }
                         }
                     }

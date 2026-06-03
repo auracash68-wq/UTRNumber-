@@ -7,6 +7,7 @@ import androidx.room.RoomDatabase
 
 @Database(entities = [HistoryItem::class], version = 1, exportSchema = false)
 abstract class CalculatorDatabase : RoomDatabase() {
+
     abstract fun historyDao(): HistoryDao
 
     companion object {
@@ -20,8 +21,8 @@ abstract class CalculatorDatabase : RoomDatabase() {
                     CalculatorDatabase::class.java,
                     "calculator_database"
                 )
-                    .fallbackToDestructiveMigration()
-                    .build()
+                .fallbackToDestructiveMigration()
+                .build()
                 INSTANCE = instance
                 instance
             }
