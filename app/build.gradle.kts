@@ -203,7 +203,7 @@ tasks.register<Copy>("copyReleaseApk") {
   doLast {
     copy {
       from(layout.buildDirectory.file("outputs/apk/release/app-release.apk"))
-      into(file("${rootDir}/app"))
+      into(file("${rootDir}/release_apk"))
     }
   }
 }
