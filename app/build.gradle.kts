@@ -13,12 +13,12 @@ plugins {
 
 android {
   namespace = "com.example"
-  compileSdk { version = release(36) { minorApiLevel = 1 } }
+  compileSdk = 36
 
   defaultConfig {
     applicationId = "com.nanocalculate.calculator"
     minSdk = 24
-    targetSdk = 36
+    targetSdk = 35
     versionCode = 1
     versionName = "1.0"
 
@@ -31,7 +31,7 @@ android {
     onlyIf { !jksFile.exists() }
     doLast {
       try {
-        ProcessBuilder(
+        val pb = ProcessBuilder(
           "keytool", "-genkeypair", "-noprompt",
           "-keystore", jksFile.absolutePath,
           "-alias", "nanocalculate_alias",
@@ -41,9 +41,23 @@ android {
           "-storepass", "sahid123",
           "-keypass", "sahid123",
           "-dname", "CN=sahid, O=Aura green, L=Kolkata, S=West Bengal, C=IN"
-        ).inheritIO().start().waitFor()
+        )
+        pb.redirectErrorStream(true)
+        val p = pb.start()
+        val reader = p.inputStream.bufferedReader()
+        var line = reader.readLine()
+        while (line != null) {
+          println("KEYTOOL_LOG: $line")
+          line = reader.readLine()
+        }
+        val exitCode = p.waitFor()
+        println("KEYTOOL_LOG: Process exited with code: $exitCode")
+        if (exitCode != 0) {
+          throw GradleException("Keytool failed with exit code $exitCode")
+        }
       } catch (e: Exception) {
         logger.warn("Keystore creation failed: ", e)
+        throw GradleException("Keystore creation failed: ${e.message}", e)
       }
     }
   }
@@ -102,12 +116,16 @@ android {
       storePassword = "sahid123"
       keyAlias = "nanocalculate_alias"
       keyPassword = "sahid123"
+      isV1SigningEnabled = true
+      isV2SigningEnabled = true
     }
     create("debugConfig") {
       storeFile = file("${rootDir}/debug.keystore")
       storePassword = "android"
       keyAlias = "androiddebugkey"
       keyPassword = "android"
+      isV1SigningEnabled = true
+      isV2SigningEnabled = true
     }
   }
 
@@ -198,12 +216,25 @@ dependencies {
 
 tasks.register<Copy>("copyReleaseApk") {
   dependsOn("assembleRelease")
-  from(layout.buildDirectory.file("outputs/apk/release/app-release.apk"))
+  val releaseApkFile = layout.buildDirectory.file("outputs/apk/release/app-release.apk")
+  from(releaseApkFile)
   into(file("${rootDir}/.build-outputs"))
   doLast {
+    val srcFile = releaseApkFile.get().asFile
+    if (srcFile.exists()) {
+      println("DIAGNOSTIC: Original APK size: ${srcFile.length()} bytes (${srcFile.length() / (1024 * 1024)} MB)")
+    } else {
+      println("DIAGNOSTIC ERROR: Original APK file does not exist!")
+    }
     copy {
-      from(layout.buildDirectory.file("outputs/apk/release/app-release.apk"))
+      from(releaseApkFile)
       into(file("${rootDir}/release_apk"))
+    }
+    val copiedFile = file("${rootDir}/release_apk/app-release.apk")
+    if (copiedFile.exists()) {
+      println("DIAGNOSTIC: Copied APK size: ${copiedFile.length()} bytes (${copiedFile.length() / (1024 * 1024)} MB)")
+    } else {
+      println("DIAGNOSTIC ERROR: Copied APK file does not exist!")
     }
   }
 }
